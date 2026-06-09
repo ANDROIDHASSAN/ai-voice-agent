@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8080";
+// Empty default = same-origin relative calls (Vercel-only). Local dev sets
+// VITE_API_URL=http://localhost:8787 in client/.env.
+const API = import.meta.env.VITE_API_URL || "";
 
 export default function LeadsDashboard() {
   const [tab, setTab] = useState("bookings");
