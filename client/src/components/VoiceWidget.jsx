@@ -2,59 +2,55 @@ import { useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
 
 const PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY;
-const ASSISTANT_ID = import.meta.env.VITE_VAPI_ASSISTANT_ID;
 
-export default function VoiceWidget() {
+const LANG_NAME = { en: "English", hi: "Hindi", mr: "Marathi" };
+const LANG_LABEL = { en: "English", hi: "हिंदी", mr: "मराठी" };
+
+export default function VoiceWidget({ agent, onClose }) {
   const vapiRef = useRef(null);
   const [status, setStatus] = useState("idle"); // idle | connecting | live | ended
+  const [lang, setLang] = useState("en");
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(0);
-  const [transcript, setTranscript] = useState([]); // {role, text}
+  const [transcript, setTranscript] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!PUBLIC_KEY) {
-      setError("Missing VITE_VAPI_PUBLIC_KEY in client/.env");
+      setError("Missing VITE_VAPI_PUBLIC_KEY");
       return;
     }
     const vapi = new Vapi(PUBLIC_KEY);
     vapiRef.current = vapi;
-
     vapi.on("call-start", () => setStatus("live"));
-    vapi.on("call-end", () => {
-      setStatus("ended");
-      setVolume(0);
-    });
+    vapi.on("call-end", () => { setStatus("ended"); setVolume(0); });
     vapi.on("volume-level", (v) => setVolume(v));
     vapi.on("error", (e) => {
-      console.error(e);
-      setError(e?.errorMsg || e?.message || "Call error");
+      const msg = e?.errorMsg || e?.error?.message || e?.message || "Call error";
+      setError(typeof msg === "string" ? msg : JSON.stringify(msg));
       setStatus("idle");
     });
-    vapi.on("message", (msg) => {
-      // Live transcript stream
-      if (msg.type === "transcript" && msg.transcriptType === "final") {
-        setTranscript((t) => [...t, { role: msg.role, text: msg.transcript }]);
+    vapi.on("message", (m) => {
+      if (m.type === "transcript" && m.transcriptType === "final") {
+        setTranscript((t) => [...t, { role: m.role, text: m.transcript }]);
       }
     });
-
-    return () => {
-      try {
-        vapi.stop();
-      } catch {}
-    };
+    return () => { try { vapi.stop(); } catch {} };
   }, []);
 
   const start = async () => {
     setError("");
     setTranscript([]);
-    if (!ASSISTANT_ID) {
-      setError("Missing VITE_VAPI_ASSISTANT_ID — run `npm run provision` in the server.");
+    if (!agent?.assistantId) {
+      setError("This agent isn't provisioned yet — run `npm run provision` in the server.");
       return;
     }
     setStatus("connecting");
     try {
-      await vapiRef.current.start(ASSISTANT_ID);
+      await vapiRef.current.start(agent.assistantId, {
+        firstMessage: agent.greetings?.[lang] || agent.greetings?.en,
+        variableValues: { language: LANG_NAME[lang] },
+      });
     } catch (e) {
       setError(e?.message || "Could not start the call");
       setStatus("idle");
@@ -62,23 +58,37 @@ export default function VoiceWidget() {
   };
 
   const stop = () => vapiRef.current?.stop();
-
-  const toggleMute = () => {
-    const next = !muted;
-    vapiRef.current?.setMuted(next);
-    setMuted(next);
-  };
-
+  const toggleMute = () => { const n = !muted; vapiRef.current?.setMuted(n); setMuted(n); };
   const live = status === "live";
 
   return (
-    <div className="widget">
+    <div className="call-panel" style={{ "--accent": agent.color }}>
+      <button className="call-panel__close" onClick={onClose}>✕</button>
+
+      <div className="call-panel__head">
+        <span className="call-panel__emoji">{agent.emoji}</span>
+        <div>
+          <h3>{agent.agentName} · {agent.brand}</h3>
+          <p>{agent.industry}</p>
+        </div>
+      </div>
+
+      {!live && status !== "connecting" && (
+        <div className="lang-row">
+          {["en", "hi", "mr"].map((l) => (
+            <button key={l} className={`lang ${lang === l ? "lang--on" : ""}`} onClick={() => setLang(l)}>
+              {LANG_LABEL[l]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className={`orb ${live ? "orb--live" : ""}`} style={{ "--vol": volume }}>
         <div className="orb__core" />
       </div>
 
       <p className="status">
-        {status === "idle" && "Ready to talk"}
+        {status === "idle" && `Ready — tap to talk in ${LANG_LABEL[lang]}`}
         {status === "connecting" && "Connecting…"}
         {status === "live" && "Listening — speak naturally"}
         {status === "ended" && "Call ended"}
@@ -91,12 +101,8 @@ export default function VoiceWidget() {
           </button>
         ) : (
           <>
-            <button className="btn" onClick={toggleMute}>
-              {muted ? "🔇 Unmute" : "🎙️ Mute"}
-            </button>
-            <button className="btn btn--danger" onClick={stop}>
-              ✕ End call
-            </button>
+            <button className="btn" onClick={toggleMute}>{muted ? "🔇 Unmute" : "🎙️ Mute"}</button>
+            <button className="btn btn--danger" onClick={stop}>✕ End call</button>
           </>
         )}
       </div>
@@ -107,7 +113,7 @@ export default function VoiceWidget() {
         <div className="transcript">
           {transcript.map((m, i) => (
             <div key={i} className={`bubble bubble--${m.role}`}>
-              <span className="bubble__who">{m.role === "assistant" ? "Agent" : "You"}</span>
+              <span className="bubble__who">{m.role === "assistant" ? agent.agentName : "You"}</span>
               {m.text}
             </div>
           ))}

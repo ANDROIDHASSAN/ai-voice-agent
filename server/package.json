@@ -8,7 +8,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "google:auth": "node scripts/googleAuth.js",
-    "provision": "node scripts/provisionAssistant.js"
+    "provision": "node scripts/provisionAll.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

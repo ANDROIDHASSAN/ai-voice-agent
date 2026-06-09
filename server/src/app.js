@@ -4,7 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { connectDB } from "./config/db.js";
 import vapiWebhook from "./routes/vapiWebhook.js";
-import leadsRouter from "./routes/leads.js";
+import agentsRouter from "./routes/agents.js";
 
 const app = express();
 
@@ -48,8 +48,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOS
 // Vapi posts tool-calls + end-of-call reports here
 app.use("/api/vapi", vapiWebhook);
 
-// Dashboard data
-app.use("/api", leadsRouter);
+// Agent catalog + CRM
+app.use("/api", agentsRouter);
 
 // 404 + error handlers → always return JSON, never crash.
 app.use((req, res) => res.status(404).json({ error: "Not found", path: req.path }));

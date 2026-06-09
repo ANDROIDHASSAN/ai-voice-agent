@@ -1,24 +1,23 @@
 import mongoose from "mongoose";
 
 /**
- * A Lead is one prospect / one phone (or web) conversation with the agent.
- * It is created/updated from Vapi's end-of-call-report and tool calls.
+ * A Lead = one prospect / one conversation with a demo agent.
+ * Created/updated from tool calls and the end-of-call report.
  */
 const LeadSchema = new mongoose.Schema(
   {
-    callId: { type: String, index: true }, // Vapi call id (dedupe)
+    callId: { type: String, index: true },
+    agentKey: { type: String, index: true }, // which demo agent
+    language: String, // en | hi | mr
+
     name: String,
     company: String,
     email: String,
     phone: String,
 
-    // Qualification captured during the conversation
-    eventType: String,
-    scale: String, // guests / cities
-    eventDate: String, // tentative, free-text as the prospect said it
-    budgetRange: String,
-    decisionMaker: String,
-    timeline: String,
+    // Qualification / interest
+    interest: String, // what they want (service / need)
+    notes: String,
 
     status: {
       type: String,
@@ -26,12 +25,12 @@ const LeadSchema = new mongoose.Schema(
       default: "new",
     },
 
-    summary: String, // Vapi's end-of-call summary
-    transcript: String, // full transcript text
+    summary: String,
+    transcript: String,
     recordingUrl: String,
     durationSeconds: Number,
     endedReason: String,
-    source: { type: String, default: "web" }, // web | phone-inbound | phone-outbound
+    source: { type: String, default: "web" },
   },
   { timestamps: true }
 );
