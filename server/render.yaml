@@ -1,0 +1,63 @@
+# Render Blueprint — deploy the server as a free Web Service.
+# In Render: New → Blueprint → connect your repo → it reads this file.
+# Then fill the env vars marked sync:false in the dashboard.
+services:
+  - type: web
+    name: voice-agent-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PORT
+        value: "10000" # Render injects its own PORT; this is a harmless default
+      - key: SERVER_PUBLIC_URL
+        sync: false # set to your https://<service>.onrender.com URL after first deploy
+      - key: CLIENT_ORIGIN
+        sync: false # your Vercel URL, e.g. https://your-app.vercel.app
+      - key: MONGODB_URI
+        sync: false
+      - key: VAPI_PRIVATE_KEY
+        sync: false
+      - key: VAPI_WEBHOOK_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_CALENDAR_ID
+        value: primary
+      - key: FOUNDER_EMAIL
+        sync: false
+      - key: AGENT_NAME
+        sync: false
+      - key: AGENCY_NAME
+        sync: false
+      - key: FOUNDER_NAME
+        sync: false
+      - key: CITY_HQ
+        sync: false
+      - key: YEARS
+        sync: false
+      - key: FLAGSHIP_PROOF
+        sync: false
+      - key: BRAND_PROOF
+        sync: false
+      - key: CONSULT_LENGTH_MIN
+        value: "30"
+      - key: TIMEZONE
+        value: Asia/Kolkata
+      - key: BUSINESS_HOURS_START
+        value: "10"
+      - key: BUSINESS_HOURS_END
+        value: "19"

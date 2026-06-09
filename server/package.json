@@ -1,0 +1,25 @@
+{
+  "name": "event-pr-voice-agent-server",
+  "version": "1.0.0",
+  "description": "MERN backend for an event-management & PR voice agent (Vapi voice + Groq LLM + Google Calendar booking)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "google:auth": "node scripts/googleAuth.js",
+    "provision": "node scripts/provisionAssistant.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^144.0.0",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.6.0",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
