@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { RefreshCw } from "lucide-react";
+import { AgentIcon } from "../lib/icons.jsx";
 
 const API = import.meta.env.VITE_API_URL || "";
 const LEAD_STATUSES = ["new", "qualified", "booked", "callback", "not_fit"];
@@ -23,9 +25,7 @@ export default function CRM() {
       setStats(s && s.perAgent ? s : { totals: {}, perAgent: [] });
       setLeads(Array.isArray(l) ? l : []);
       setBookings(Array.isArray(b) ? b : []);
-    } catch {
-      setErr("Couldn't reach the API.");
-    }
+    } catch { setErr("Couldn't reach the API."); }
   }, [agentFilter]);
 
   useEffect(() => {
@@ -35,61 +35,44 @@ export default function CRM() {
   }, [load]);
 
   const setLeadStatus = async (id, status) => {
-    await fetch(`${API}/api/leads/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    await fetch(`${API}/api/leads/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     load();
   };
   const cancelBooking = async (id) => {
-    if (!confirm("Cancel this booking? The slot will reopen.")) return;
+    if (!confirm("Cancel this booking? The slot reopens.")) return;
     await fetch(`${API}/api/bookings/${id}/cancel`, { method: "PATCH" });
     load();
   };
-
-  const fmt = (iso) =>
-    iso ? new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "—";
+  const fmt = (iso) => (iso ? new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "—");
 
   return (
-    <section className="crm">
-      <h2 className="crm__title">CRM · Live across all agents</h2>
+    <section className="crm wrap">
+      <h2>CRM</h2>
+      <p className="sub">Live across all 8 agents — leads, bookings, conversion.</p>
 
-      {/* KPI strip */}
       <div className="kpis">
-        <div className="kpi kpi--big"><span>{stats.totals?.leads || 0}</span><label>Total leads</label></div>
-        <div className="kpi kpi--big"><span>{stats.totals?.bookings || 0}</span><label>Bookings</label></div>
+        <div className="kpi"><span>{stats.totals?.leads || 0}</span><label>Total leads</label></div>
+        <div className="kpi"><span>{stats.totals?.bookings || 0}</span><label>Bookings</label></div>
       </div>
 
-      {/* Per-agent cards */}
-      <div className="agent-stats">
-        <button className={`astat ${!agentFilter ? "astat--on" : ""}`} onClick={() => setAgentFilter("")}>
+      <div className="astats">
+        <button className={`astat ${!agentFilter ? "on" : ""}`} onClick={() => setAgentFilter("")}>
           <b>All agents</b>
         </button>
         {stats.perAgent?.map((a) => (
-          <button
-            key={a.key}
-            className={`astat ${agentFilter === a.key ? "astat--on" : ""}`}
-            style={{ "--accent": a.color }}
-            onClick={() => setAgentFilter(a.key)}
-          >
-            <span className="astat__emoji">{a.emoji}</span>
-            <b>{a.brand}</b>
-            <small>{a.leads} leads · {a.bookings} booked · {a.conversion}%</small>
+          <button key={a.key} className={`astat ${agentFilter === a.key ? "on" : ""}`} onClick={() => setAgentFilter(a.key)}>
+            <span className="astat__ic" style={{ background: a.color }}><AgentIcon agentKey={a.key} size={16} /></span>
+            <span><b>{a.brand}</b><small>{a.leads} leads · {a.bookings} booked · {a.conversion}%</small></span>
           </button>
         ))}
       </div>
 
-      {err && <p className="error">{err}</p>}
+      {err && <p className="err-line">{err}</p>}
 
-      <div className="dash__tabs">
-        <button className={tab === "bookings" ? "active" : ""} onClick={() => setTab("bookings")}>
-          Bookings ({bookings.length})
-        </button>
-        <button className={tab === "leads" ? "active" : ""} onClick={() => setTab("leads")}>
-          Leads ({leads.length})
-        </button>
-        <button className="refresh" onClick={load}>↻</button>
+      <div className="tabs">
+        <button className={tab === "bookings" ? "on" : ""} onClick={() => setTab("bookings")}>Bookings ({bookings.length})</button>
+        <button className={tab === "leads" ? "on" : ""} onClick={() => setTab("leads")}>Leads ({leads.length})</button>
+        <button className="refresh" onClick={load}><RefreshCw size={13} /></button>
       </div>
 
       {tab === "bookings" ? (
@@ -103,11 +86,9 @@ export default function CRM() {
                 <td>{b.serviceName || "—"}</td>
                 <td>{b.name}<br /><small>{b.phone || b.email}</small></td>
                 <td>{b.language || "—"}</td>
-                <td>
-                  {b.status === "confirmed"
-                    ? <button className="mini danger" onClick={() => cancelBooking(b._id)}>Cancel</button>
-                    : <span className="tag tag--not_fit">cancelled</span>}
-                </td>
+                <td>{b.status === "confirmed"
+                  ? <button className="mini danger" onClick={() => cancelBooking(b._id)}>Cancel</button>
+                  : <span className="pill">cancelled</span>}</td>
               </tr>
             ))}
             {!bookings.length && <tr><td colSpan="6" className="empty">No bookings yet.</td></tr>}
