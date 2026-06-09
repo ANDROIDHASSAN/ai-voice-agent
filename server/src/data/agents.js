@@ -249,6 +249,23 @@ export const AGENTS = [
   },
 ];
 
+/**
+ * Provisioned Vapi assistant IDs (written here by scripts/provisionAll.js output).
+ * Baked in so the public catalog never depends on a cold serverless DB read.
+ * Re-provisioning keeps these IDs stable (PATCH, not re-create).
+ */
+export const ASSISTANT_IDS = {
+  truecode: "e8202503-a5dc-4e3e-a33e-04611f876018",
+  realestate: "17ed1462-8286-4704-924f-0143c534f75b",
+  events: "9156a811-93ef-42a2-9863-05b4e10a4930",
+  education: "78925317-59e0-41ea-9f67-352f3fae7dab",
+  healthcare: "0bd2510e-caa6-4102-b5d1-9d078ed3ce4f",
+  restaurant: "8d2131fe-3bc0-4d41-8134-256b9b93c73e",
+  salon: "9d9ba691-857a-4fee-ab90-dc25a74cf51d",
+  automotive: "634b31c6-98fe-49dd-966d-eba91af59335",
+};
+AGENTS.forEach((a) => { a.assistantId = ASSISTANT_IDS[a.key] || null; });
+
 export const getAgent = (key) => AGENTS.find((a) => a.key === key);
 
 /* ----------------------------------------------------------------------------

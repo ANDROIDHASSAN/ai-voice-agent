@@ -22,12 +22,23 @@ export default function VoiceWidget({ agent, onClose }) {
     }
     const vapi = new Vapi(PUBLIC_KEY);
     vapiRef.current = vapi;
-    vapi.on("call-start", () => setStatus("live"));
+    vapi.on("call-start", () => { setError(""); setStatus("live"); });
     vapi.on("call-end", () => { setStatus("ended"); setVolume(0); });
     vapi.on("volume-level", (v) => setVolume(v));
     vapi.on("error", (e) => {
-      const msg = e?.errorMsg || e?.error?.message || e?.message || "Call error";
-      setError(typeof msg === "string" ? msg : JSON.stringify(msg));
+      const raw = e?.errorMsg || e?.error?.message || e?.message || JSON.stringify(e || {});
+      const text = (typeof raw === "string" ? raw : JSON.stringify(raw)).toLowerCase();
+      // A network/DNS block of daily.co (Vapi's audio transport) is the most
+      // common failure — give an actionable message instead of a cryptic one.
+      if (text.includes("daily") || text.includes("websocket") || text.includes("ejection") ||
+          text.includes("meeting has ended") || text.includes("network")) {
+        setError(
+          "Your network is blocking the call audio (daily.co). Fix: set your DNS to 1.1.1.1, " +
+          "use a different Wi-Fi / mobile data, or turn on a VPN — then try again."
+        );
+      } else {
+        setError(typeof raw === "string" ? raw : "Call error");
+      }
       setStatus("idle");
     });
     vapi.on("message", (m) => {

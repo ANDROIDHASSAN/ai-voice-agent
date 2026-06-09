@@ -45,7 +45,7 @@ router.get("/agents", async (_req, res) => {
       blurb: a.blurb,
       services: a.services.map((s) => ({ name: s.name, durationMin: s.durationMin, priceHint: s.priceHint })),
       greetings: buildGreetings(a),
-      assistantId: idMap[a.key] || null,
+      assistantId: idMap[a.key] || a.assistantId || null,
     }));
     res.json(catalog);
   } catch (e) {
