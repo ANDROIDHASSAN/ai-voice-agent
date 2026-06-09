@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import Vapi from "@vapi-ai/web";
 import { X, Phone, PhoneOff, Mic, MicOff } from "lucide-react";
 import { AgentIcon } from "../lib/icons.jsx";
+import { VOICE_BY_LANG, LANG_NAME, LANG_LABEL } from "../lib/voiceConfig.js";
 
 const PUBLIC_KEY = import.meta.env.VITE_VAPI_PUBLIC_KEY;
-const LANG_NAME = { en: "English", hi: "Hindi", mr: "Marathi" };
-const LANG_LABEL = { en: "English", hi: "हिंदी", mr: "मराठी" };
 
 export default function VoiceWidget({ agent, onClose }) {
   const vapiRef = useRef(null);
@@ -47,10 +46,14 @@ export default function VoiceWidget({ agent, onClose }) {
     if (!agent?.assistantId) { setError("This agent isn't provisioned yet."); return; }
     setStatus("connecting");
     try {
-      await vapiRef.current.start(agent.assistantId, {
+      const overrides = {
         firstMessage: agent.greetings?.[lang] || agent.greetings?.en,
         variableValues: { language: LANG_NAME[lang] },
-      });
+      };
+      // Hindi/Marathi: swap to an Azure voice that speaks the language.
+      // English uses the assistant's default voice (no Azure needed).
+      if (VOICE_BY_LANG[lang]) overrides.voice = VOICE_BY_LANG[lang];
+      await vapiRef.current.start(agent.assistantId, overrides);
     } catch (e) { setError(e?.message || "Could not start the call"); setStatus("idle"); }
   };
   const stop = () => vapiRef.current?.stop();
