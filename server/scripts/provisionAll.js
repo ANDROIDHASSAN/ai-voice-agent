@@ -88,7 +88,7 @@ function buildTools(agent) {
 function buildAssistant(agent) {
   const greetings = buildGreetings(agent);
   return {
-    name: `${agent.brand} — ${agent.agentName} (${agent.industry})`,
+    name: `${agent.brand} — ${agent.agentName}`.slice(0, 40),
     firstMessage: greetings.en,
     firstMessageMode: "assistant-speaks-first",
     model: {

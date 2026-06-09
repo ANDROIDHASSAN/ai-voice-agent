@@ -1,6 +1,7 @@
 import { Router } from "express";
 import mongoose from "mongoose";
 import { AGENTS, getAgent, buildGreetings } from "../data/agents.js";
+import { connectDB } from "../config/db.js";
 import { Agent } from "../models/Agent.js";
 import { Lead } from "../models/Lead.js";
 import { Booking } from "../models/Booking.js";
@@ -8,6 +9,18 @@ import { findOpenSlots } from "../services/booking.js";
 
 const router = Router();
 const dbReady = () => mongoose.connection?.readyState === 1;
+
+// These routes (catalog + CRM) read the DB — unlike the live-call webhook they
+// can afford to AWAIT the (cached) connection so cold serverless invocations
+// return real data instead of empty results.
+router.use(async (_req, _res, next) => {
+  try {
+    await connectDB();
+  } catch (e) {
+    console.error("agents route DB connect:", e.message);
+  }
+  next();
+});
 
 /**
  * Public catalog for the frontend gallery. Merges static display data with the
