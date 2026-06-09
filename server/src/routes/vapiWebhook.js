@@ -1,9 +1,14 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { checkAvailability, createEvent, humanSlot } from "../services/googleCalendar.js";
 import { Lead } from "../models/Lead.js";
 import { Booking } from "../models/Booking.js";
 
 const router = Router();
+
+// Only touch the DB when it's actually connected — never block a live tool
+// response on a cold/unreachable Mongo (mongoose would buffer for ~10s).
+const dbReady = () => mongoose.connection?.readyState === 1;
 
 /**
  * Single webhook Vapi POSTs to for BOTH custom tool calls and call reports.
@@ -128,8 +133,9 @@ async function runScheduleAppointment(args, callId) {
     attendeeEmails: [email, process.env.FOUNDER_EMAIL],
   });
 
-  // Persist (best-effort — won't break the call if DB is down).
+  // Persist (best-effort — won't break the call if DB is down/cold).
   try {
+    if (!dbReady()) throw new Error("DB not connected — skipping persistence");
     const lead = await Lead.findOneAndUpdate(
       { callId },
       {
@@ -176,6 +182,10 @@ async function runScheduleAppointment(args, callId) {
 async function handleEndOfCall(message) {
   const callId = message.call?.id;
   if (!callId) return;
+  if (!dbReady()) {
+    console.warn("end-of-call-report received but DB not connected — skipping save");
+    return;
+  }
 
   const transcript = message.artifact?.transcript || message.transcript || "";
   const summary = message.analysis?.summary || message.summary || "";
